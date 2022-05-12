@@ -1,38 +1,56 @@
-const path = require('path');
+const path = require("path");
+const express = require("express");
+const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
 
-const express = require('express');
-const bodyParser = require('body-parser');
-
-const errorController = require('./controllers/error');
-const mongoConnect = require('./util/database').mongoConnect;
-const User = require('./models/user');
+const errorController = require("./controllers/error");
+const User = require("./models/user");
 
 const app = express();
 
-app.set('view engine', 'ejs');
-app.set('views', 'views');
+app.set("view engine", "ejs");
+app.set("views", "views");
 
-const adminRoutes = require('./routes/admin');
-const shopRoutes = require('./routes/shop');
+const adminRoutes = require("./routes/admin");
+const shopRoutes = require("./routes/shop");
 
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
-    User.findById("6277c0a524b066d73af7d8e4")
-        .then(user => {
-            req.user = new User(user.name, user.email, user.cart, user._id);
-            next();
-        })
-        .catch(err => {
-            console.log(err);
-        });
+  User.findById("627b36879e7c57f614dd8cca")
+    .then((user) => {
+      //console.log(user)
+      req.user = user;
+      next();
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
-app.use('/admin', adminRoutes);
+app.use("/admin", adminRoutes);
 app.use(shopRoutes);
 app.use(errorController.get404);
 
-mongoConnect(() => {
+mongoose
+  .connect(
+    "mongodb+srv://root:qexban-hIjhug-6zokwi@cluster0.e9oid.mongodb.net/shop?retryWrites=true&w=majority"
+  )
+  .then((res) => {
+    User.findOne().then((user) => {
+      if (!user) {
+        const user = new User({
+          name: "Rahul",
+          email: "test@test.com",
+          cart: { items: [] },
+        });
+        user.save();
+      }
+    });
+    console.log("Connected!!");
     app.listen(3000);
-});
+  })
+  .catch((err) => {
+    console.log(err);
+  });

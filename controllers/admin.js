@@ -1,13 +1,13 @@
-const Product = require('../models/product');
+const Product = require("../models/product");
 
 exports.getAddProduct = (req, res, next) => {
-  res.render('admin/add-product', {
-    pageTitle: 'Add Product',
-    path: '/admin/edit-product',
+  res.render("admin/add-product", {
+    pageTitle: "Add Product",
+    path: "/admin/edit-product",
     editing: false,
     formsCSS: true,
     productCSS: true,
-    activeAddProduct: true
+    activeAddProduct: true,
   });
 };
 
@@ -17,33 +17,36 @@ exports.postAddProduct = (req, res, next) => {
   const price = req.body.price;
   const description = req.body.description;
   const userId = req.user._id;
-  const product = new Product(
-    title,
-    imageUrl,
-    description,
-    price,
-    null,
-    userId);
-  product.save()
+  const product = new Product({
+    title: title,
+    imageUrl: imageUrl,
+    price: price,
+    description: description,
+    userId:userId
+  });
+  product
+    .save()
     .then(() => {
-      console.log('Product Created!');
-      res.redirect('/admin/products');
+      console.log("Product Created!");
+      res.redirect("/admin/products");
     })
-    .catch(err => {
+    .catch((err) => {
       console.log(err);
     });
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.fetchAll()
-    .then(products => {
-      res.render('admin/products', {
+  Product.find()
+    // .select('title price -id')
+    // .populate('userId', 'name')
+    .then((products) => {
+      res.render("admin/products", {
         prods: products,
-        pageTitle: 'Admin Products',
-        path: '/admin/products'
+        pageTitle: "Admin Products",
+        path: "/admin/products",
       });
     })
-    .catch(err => {
+    .catch((err) => {
       console.log(err);
     });
 };
@@ -51,20 +54,21 @@ exports.getProducts = (req, res, next) => {
 exports.getEditProduct = (req, res, next) => {
   const editMode = req.query.edit;
   if (!editMode) {
-    return res.redirect('/');
+    return res.redirect("/");
   }
   const prodId = req.params.productId;
-  Product.findById(prodId).then(product => {
-    res.render('admin/edit-product', {
-      pageTitle: 'Edit Product',
-      path: '/admin/edit-product',
-      editing: editMode,
-      product: product
+  Product.findById(prodId)
+    .then((product) => {
+      res.render("admin/edit-product", {
+        pageTitle: "Edit Product",
+        path: "/admin/edit-product",
+        editing: editMode,
+        product: product,
+      });
+    })
+    .catch((err) => {
+      console.log(err);
     });
-  }).catch(err => {
-    console.log(err);
-  })
-
 };
 
 exports.postEditProduct = (req, res, next) => {
@@ -73,32 +77,34 @@ exports.postEditProduct = (req, res, next) => {
   const upadtedImageUrl = req.body.imageUrl;
   const upadtedPrice = req.body.price;
   const upadtedDescription = req.body.description;
-  const userId = req.user._id;
-  const product = new Product(
-    updatedTitle,
-    upadtedImageUrl,
-    upadtedDescription,
-    upadtedPrice,
-    id,
-    userId);
-  product.save()
-    .then(() => {
-      console.log('Updated product');
-      res.redirect('/admin/products');
-    })
-    .catch(err => { console.log(err) });
+  const userId = req.user;
 
+  Product.findById(id)
+    .then((product) => {
+      product.title = updatedTitle;
+      product.price = upadtedPrice;
+      product.description = upadtedDescription;
+      product.imageUrl = upadtedImageUrl;
+      product.userId = userId;
+      return product.save();
+    })
+    .then(() => {
+      console.log("Updated product");
+      res.redirect("/admin/products");
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 };
 
 exports.psotDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.deleteById(prodId)
+  Product.findByIdAndDelete(prodId)
     .then(() => {
-      console.log('Product DESTROYED');
-      res.redirect('/admin/products');
+      console.log("Product DESTROYED");
+      res.redirect("/admin/products");
     })
-    .catch(err => {
+    .catch((err) => {
       console.log(err);
     });
-
-}
+};
